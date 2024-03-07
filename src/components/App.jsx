@@ -6,89 +6,111 @@ import { Button } from './Button/Button';
 import { Modal } from './Modal/Modal';
 import { Loader } from './Loader/Loader';
 import '.././index.css';
+import { useEffect,useState } from 'react';
 
-export class App extends Component {
-  state = {
-    searchText: '',
-    images: [],
-    page: 1,
-    showModal: false,
-    modalImg: null,
-    isLoading: false,
-    totalPages: 1,
-    errorMessage: '',
-  };
+export const App =()=> {
+  // state = {
+  //   searchText: '',
+  //   images: [],
+  //   page: 1,
+  //   showModal: false,
+  //   modalImg: null,
+  //   isLoading: false,
+  //   totalPages: 1,
+  //   errorMessage: '',
+  // };
 
-   componentDidUpdate = (prevProps, prevState) => {
+  const [searchText, setSearchText] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImg, setModalImg] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [errorMessage, setErrorMessage] = useState('');
   
-     const { searchText, page } = this.state;
+  useEffect(() => {
      
      if (searchText.trim() === '') {
        return;
-     }
-  if (
-    prevState.searchText !== searchText ||
-    prevState.page !== page
-  ) {
-    this.setState({ isLoading: true });
+    }
+    setIsLoading(true);
 
     getImages(searchText, page).then(data => {
-      const newImages = page === 1 ? data.hits : [...prevState.images, ...data.hits];
-
-      this.setState({
-        images: newImages,
-        isLoading: false,
-        totalPages: Math.ceil(data.totalHits / 12),
+      setImages(prevImages => {
+        const newImages = page === 1 ? data.hits : [...prevImages, ...data.hits];
+        return newImages;
       });
+      setIsLoading(false);
+      setTotalPages(Math.ceil(data.totalHits / 12));
     })
-    .catch(error=> this.setState({errorMessage:error.message, isLoading: false}))
-     }
-   }; 
+      .catch(error => {
+        setErrorMessage(error.message);
+        setIsLoading(false)
+      })
+  
+  }, [ page, searchText])
+  
+  //  componentDidUpdate = (prevProps, prevState) => {
+  
+  //    const { searchText, page } = this.state;
+     
+  //    if (searchText.trim() === '') {
+  //      return;
+  //    }
+  // if (
+  //   prevState.searchText !== searchText ||
+  //   prevState.page !== page
+  // ) {
+  //   this.setState({ isLoading: true });
+
+  //   getImages(searchText, page).then(data => {
+  //     const newImages = page === 1 ? data.hits : [...prevState.images, ...data.hits];
+
+  //     this.setState({
+  //       images: newImages,
+  //       isLoading: false,
+  //       totalPages: Math.ceil(data.totalHits / 12),
+  //     });
+  //   })
+  //   .catch(error=> this.setState({errorMessage:error.message, isLoading: false}))
+  //    }
+  //  }; 
 
  
 
-  handleSearchBarSubmit = e => {
+  const handleSearchBarSubmit = e => {
     e.preventDefault();
     const { value } = e.target.elements.input;
-    this.setState({ searchText: value, page:1 });
+    setSearchText(value);
+    setPage(1);
     e.target.elements.input.value = '';
 
   };
 
-  onLoadMore = () => {
-    this.setState(prevState =>({ page: prevState.page + 1 }));
+  const onLoadMore = () => {
+    setPage(prevpage => prevpage + 1);
   };
 
-  openModal = modalImg => {
-    this.setState({ showModal: true, modalImg });
+  const openModal = modalImg => {
+    setShowModal(true);
+    setModalImg(modalImg);
   };
 
-  closeModal = () => {
-    this.setState({ showModal: false });
+  const closeModal = () => {
+    setShowModal(false);
   };
-
-  render() {
-    const {
-      images,
-      isLoading,
-      showModal,
-      modalImg,
-      searchText,
-      totalPages,
-      page,
-      errorMessage,
-    } = this.state;
 
     return (
       <div className="App">
-        <Searchbar onSubmit={this.handleSearchBarSubmit} />
+        <Searchbar onSubmit={handleSearchBarSubmit} />
         {errorMessage && <p>Seems like something went wrong : {errorMessage}</p>}
         {isLoading && <Loader />}
         {images.length > 0 && (
           <>
-            <ImageGallery images={images} openModal={this.openModal} />
+            <ImageGallery images={images} openModal={openModal} />
             <Button
-              onLoadMore={this.onLoadMore}
+              onLoadMore={onLoadMore}
               disabled={totalPages === page}
             />
           </>
@@ -97,10 +119,9 @@ export class App extends Component {
           <Modal
             modalImg={modalImg}
             alt={searchText}
-            onClose={this.closeModal}
+            onClose={closeModal}
           />
         )}
       </div>
     );
   }
-}
